@@ -113,18 +113,30 @@ export class MindMap {
   private createDragBehavior(
     simulation: d3.Simulation<MindMapNode, undefined>
   ): d3.DragBehavior<SVGCircleElement, MindMapNode, MindMapNode> {
+    let initialPosition: [number, number] = [0, 0]
+
     return d3
       .drag<SVGCircleElement, MindMapNode, MindMapNode>()
       .on('start', (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart()
-        d.fx = d.x ?? 0
-        d.fy = d.y ?? 0
+
+        // 记录初始位置（考虑当前变换）
+        initialPosition = this.transform.invert([event.x, event.y])
+        d.fx = initialPosition[0]
+        d.fy = initialPosition[1]
       })
       .on('drag', (event, d) => {
-        // 考虑当前的缩放和位移
-        const inverted = this.transform.invert([event.x, event.y])
-        d.fx = inverted[0]
-        d.fy = inverted[1]
+        // 计算相对于初始位置的增量（在变换后的坐标系中）
+        const currentPosition = this.transform.invert([event.x, event.y])
+        const dx = currentPosition[0] - initialPosition[0]
+        const dy = currentPosition[1] - initialPosition[1]
+
+        // 应用增量到原始位置
+        d.fx = (d.x || 0) + dx
+        d.fy = (d.y || 0) + dy
+
+        // 更新初始位置为当前值，用于下一次计算
+        initialPosition = currentPosition
       })
       .on('end', (event, d) => {
         if (!event.active) simulation.alphaTarget(0)
