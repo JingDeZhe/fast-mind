@@ -45,9 +45,9 @@ export class MindMap {
         d3
           .forceLink(links)
           .id((d) => (d as MindMapLink).source)
-          .distance(100)
+          .distance(50)
       )
-      .force('charge', d3.forceManyBody().strength(-200))
+      .force('charge', d3.forceManyBody().strength(-50))
       .force('center', d3.forceCenter(...this.rootCenter))
       .force('collision', d3.forceCollide().radius(30))
 
@@ -113,30 +113,19 @@ export class MindMap {
   private createDragBehavior(
     simulation: d3.Simulation<MindMapNode, undefined>
   ): d3.DragBehavior<SVGCircleElement, MindMapNode, MindMapNode> {
-    let initialPosition: [number, number] = [0, 0]
-
     return d3
       .drag<SVGCircleElement, MindMapNode, MindMapNode>()
       .on('start', (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart()
 
-        // 记录初始位置（考虑当前变换）
-        initialPosition = this.transform.invert([event.x, event.y])
-        d.fx = initialPosition[0]
-        d.fy = initialPosition[1]
+        // 直接使用当前变换后的坐标，避免任何转换
+        d.fx = d.x || 0
+        d.fy = d.y || 0
       })
       .on('drag', (event, d) => {
-        // 计算相对于初始位置的增量（在变换后的坐标系中）
-        const currentPosition = this.transform.invert([event.x, event.y])
-        const dx = currentPosition[0] - initialPosition[0]
-        const dy = currentPosition[1] - initialPosition[1]
-
-        // 应用增量到原始位置
-        d.fx = (d.x || 0) + dx
-        d.fy = (d.y || 0) + dy
-
-        // 更新初始位置为当前值，用于下一次计算
-        initialPosition = currentPosition
+        // 直接使用d3.event提供的坐标，不进行任何转换
+        d.fx = event.x
+        d.fy = event.y
       })
       .on('end', (event, d) => {
         if (!event.active) simulation.alphaTarget(0)
