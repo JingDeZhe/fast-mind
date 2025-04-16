@@ -45,9 +45,9 @@ export class MindMap {
         d3
           .forceLink(links)
           .id((d) => (d as MindMapLink).source)
-          .distance(50)
+          .distance(100)
       )
-      .force('charge', d3.forceManyBody().strength(-50))
+      .force('charge', d3.forceManyBody().strength(-3))
       .force('center', d3.forceCenter(...this.rootCenter))
       .force('collision', d3.forceCollide().radius(30))
 
@@ -66,7 +66,19 @@ export class MindMap {
       .data(languagesData.nodes)
       .join('circle')
       .attr('r', 10)
+      .attr('fill', '#202020')
       .call(this.createDragBehavior(simulation))
+      .on('mouseover', (e, d) => {
+        d3.select(e.currentTarget).attr('fill', '#ff7f0e')
+        labelElements
+          .filter((label) => label === d)
+          .attr('font-weight', 'bold')
+          .attr('fill', '#ff7f0e')
+      })
+      .on('mouseout', () => {
+        nodeElements.attr('fill', '#202020')
+        labelElements.attr('font-weight', 'normal').attr('fill', '#303030')
+      })
 
     const labelElements = this.g
       .append('g')
@@ -77,6 +89,8 @@ export class MindMap {
       .attr('font-size', 12)
       .attr('dx', 15)
       .attr('dy', 4)
+      .attr('fill', '#303030')
+      .style('pointer-events', 'none')
 
     simulation.on('tick', () => {
       linkElements
