@@ -17,7 +17,12 @@ export class MindMap {
 
   constructor(rootSelector = '#app') {
     this.rootEl = d3.select(rootSelector).node() as HTMLElement
-    this.svg = d3.select(this.rootEl).append('svg')
+    this.svg = d3
+      .select(this.rootEl)
+      .append('svg')
+      .on('contextmenu', function (e) {
+        e.preventDefault()
+      })
 
     // 添加一个包含所有可缩放元素的组
     this.g = this.svg.append('g')
