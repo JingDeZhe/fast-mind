@@ -10,19 +10,27 @@ export class MindMap {
   rootEl: HTMLElement
   simulation: d3.Simulation<MindMapNode, MindMapLink>
   private handleResize: () => void
+  private zoomBehavior!: d3.ZoomBehavior<SVGSVGElement, unknown>
+  private g: d3.Selection<SVGGElement, unknown, null, undefined> // 用于包含所有可缩放元素的组
+  private transform: d3.ZoomTransform = d3.zoomIdentity // 当前变换状态
+
   constructor(rootSelector = '#app') {
     this.rootEl = d3.select(rootSelector).node() as HTMLElement
     this.svg = d3.select(this.rootEl).append('svg')
+
+    // 添加一个包含所有可缩放元素的组
+    this.g = this.svg.append('g')
+
     this.updateSize()
 
     this.handleResize = debounce(() => this.updateSize(), 100)
     window.addEventListener('resize', this.handleResize)
 
     this.simulation = this.initSimulation()
+    this.initZoom() // 初始化缩放行为
   }
 
   private initSimulation() {
-    const svg = this.svg
     const data = languagesData
 
     const links = data.links.map((d) => ({
@@ -43,7 +51,8 @@ export class MindMap {
       .force('center', d3.forceCenter(...this.rootCenter))
       .force('collision', d3.forceCollide().radius(30))
 
-    const linkElements = svg
+    // 在组内创建元素而不是直接在svg中
+    const linkElements = this.g
       .append('g')
       .selectAll('line')
       .data(links)
@@ -51,15 +60,15 @@ export class MindMap {
       .attr('stroke', '#999')
       .attr('stroke-width', 1.5)
 
-    const nodeElements = svg
+    const nodeElements = this.g
       .append('g')
       .selectAll<SVGCircleElement, MindMapNode>('circle')
       .data(languagesData.nodes)
       .join('circle')
       .attr('r', 10)
-      .call(createDragBehavior(simulation))
+      .call(this.createDragBehavior(simulation))
 
-    const labelElements = svg
+    const labelElements = this.g
       .append('g')
       .selectAll('text')
       .data(data.nodes)
@@ -84,11 +93,57 @@ export class MindMap {
     return simulation
   }
 
+  private initZoom() {
+    this.zoomBehavior = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 5]) // 设置缩放范围
+      .on('zoom', (event) => {
+        this.transform = event.transform
+        this.g.attr('transform', this.transform.toString())
+      })
+
+    this.svg.call(this.zoomBehavior)
+
+    // 添加双击重置缩放的功能
+    this.svg.on('dblclick', () => {
+      this.svg.transition().duration(750).call(this.zoomBehavior.transform, d3.zoomIdentity)
+    })
+  }
+
+  private createDragBehavior(
+    simulation: d3.Simulation<MindMapNode, undefined>
+  ): d3.DragBehavior<SVGCircleElement, MindMapNode, MindMapNode> {
+    return d3
+      .drag<SVGCircleElement, MindMapNode, MindMapNode>()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart()
+        d.fx = d.x ?? 0
+        d.fy = d.y ?? 0
+      })
+      .on('drag', (event, d) => {
+        // 考虑当前的缩放和位移
+        const inverted = this.transform.invert([event.x, event.y])
+        d.fx = inverted[0]
+        d.fy = inverted[1]
+      })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0)
+        d.fx = null
+        d.fy = null
+      })
+  }
+
   private updateSize() {
     this.svg
       .attr('width', this.rootEl.clientWidth)
       .attr('height', this.rootEl.clientHeight)
       .attr('viewBox', `0 0 ${this.rootEl.clientWidth} ${this.rootEl.clientHeight}`)
+
+    if (this.simulation) {
+      // 更新中心力
+      this.simulation.force('center', d3.forceCenter(...this.rootCenter))
+      this.simulation.alpha(0.3).restart()
+    }
   }
 
   private get rootCenter(): [number, number] {
@@ -97,28 +152,8 @@ export class MindMap {
 
   destroy() {
     window.removeEventListener('resize', this.handleResize)
+    this.simulation.stop()
   }
 }
 
 export const mindMap = new MindMap()
-
-function createDragBehavior(
-  simulation: d3.Simulation<MindMapNode, undefined>
-): d3.DragBehavior<SVGCircleElement, MindMapNode, MindMapNode> {
-  return d3
-    .drag<SVGCircleElement, MindMapNode, MindMapNode>()
-    .on('start', (event, d) => {
-      if (!event.active) simulation.alphaTarget(0.3).restart()
-      d.fx = d.x ?? 0 // 安全访问
-      d.fy = d.y ?? 0
-    })
-    .on('drag', (event, d) => {
-      d.fx = event.x
-      d.fy = event.y
-    })
-    .on('end', (event, d) => {
-      if (!event.active) simulation.alphaTarget(0)
-      d.fx = null
-      d.fy = null
-    })
-}
