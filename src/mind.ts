@@ -2,6 +2,7 @@ import * as d3 from 'd3'
 import { debounce } from 'es-toolkit'
 import { languagesData } from './mock' // 测试用
 import { MindMapLink, MindMapNode } from './types'
+import Swal from 'sweetalert2'
 
 type SVGSelection = d3.Selection<SVGSVGElement, unknown, null, undefined>
 
@@ -79,6 +80,7 @@ export class MindMap {
         nodeElements.attr('fill', '#202020')
         labelElements.attr('font-weight', 'normal').attr('fill', '#303030')
       })
+      .on('click', (event, d) => this.showNameEditDialog(event, d))
 
     const labelElements = this.g
       .append('g')
@@ -163,6 +165,33 @@ export class MindMap {
 
   private get rootCenter(): [number, number] {
     return [this.rootEl.clientWidth / 2, this.rootEl.clientHeight / 2]
+  }
+
+  private async showNameEditDialog(_event: MouseEvent, nodeData: MindMapNode) {
+    const { value: newName } = await Swal.fire({
+      title: '修改节点名称',
+      input: 'text',
+      inputValue: nodeData.name || '', // 当前名称作为默认值
+      inputPlaceholder: '输入新名称',
+      showCancelButton: true,
+      confirmButtonText: '保存',
+      cancelButtonText: '取消',
+      inputValidator: (value) => {
+        if (!value) return '名称不能为空！'
+        return null
+      },
+    })
+
+    if (newName) {
+      // 更新数据
+      nodeData.name = newName
+
+      // 更新界面文本
+      this.g
+        .selectAll('text')
+        .filter((d) => d === nodeData)
+        .text(newName)
+    }
   }
 
   destroy() {

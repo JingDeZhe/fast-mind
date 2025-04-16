@@ -23,6 +23,9 @@ importers:
       lil-gui:
         specifier: ^0.20.0
         version: 0.20.0
+      sweetalert2:
+        specifier: ^11.19.1
+        version: 11.19.1
     devDependencies:
       '@types/d3':
         specifier: ^7.4.3
@@ -692,6 +695,9 @@ packages:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
+  sweetalert2@11.19.1:
+    resolution: {integrity: sha512-+8yws3Sc1srAZbrgdhmEIZny1I1UOYhJOIOdtOlv4TYaP5kkwQ9Zm8/BT23Qg+KdByCNOazltxEJAHzXVu8mhA==}
+
   tinyglobby@0.2.12:
     resolution: {integrity: sha512-qkf4trmKSIiMTs/E63cxH+ojC2unam7rJ0WrauAzpT3ECNTxGRMlaXxVbfxMUC/w0LaYk6jQ4y/nGR9uBO3tww==}
     engines: {node: '>=12.0.0'}
@@ -1291,6 +1297,8 @@ snapshots:
   safer-buffer@2.1.2: {}
 
   source-map-js@1.2.1: {}
+
+  sweetalert2@11.19.1: {}
 
   tinyglobby@0.2.12:
     dependencies:
