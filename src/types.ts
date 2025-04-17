@@ -9,3 +9,8 @@ export interface MindMapLink extends SimulationLinkDatum<MindMapNode> {
   source: string
   target: string
 }
+
+export interface MindData {
+  nodes: MindMapNode[]
+  links: MindMapLink[]
+}

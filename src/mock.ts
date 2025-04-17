@@ -1,6 +1,6 @@
-import { MindMapLink, MindMapNode } from './types'
+import { MindData } from './types'
 
-export const languagesData: { nodes: MindMapNode[]; links: MindMapLink[] } = {
+export const languagesData: MindData = {
   nodes: [
     // 基础语言（祖先级）
     { id: 'algol', name: 'ALGOL (1958)' },
